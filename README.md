@@ -1,12 +1,12 @@
 # Prototyping Abstract Binding Trees
 
-While this might grow into more, currently this is a playground for me to learn
-about Abstract Binding Trees.
+While this might grow into more (say, a usable library), currently this is a
+playground for me to learn about Abstract Binding Trees.
 
 I started off from the code in
 http://semantic-domain.blogspot.de/2015/03/abstract-binding-trees.html
 
-There are many possible TODOs
+There are many possible TODOs:
 1. Use better algorithms -- the blog post declares it's using simple ones
    - For instance, use parallel substitution to avoid quadratic complexity.
    - Avoid concatenating string to build names, that's slow.
