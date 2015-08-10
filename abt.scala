@@ -2,12 +2,10 @@
 package abt
 import language.higherKinds
 
+import scalaz.Functor
+
 // Semi-standard typeclasses.
 // TODO: Refactor to use Scalaz/Cats {{{
-trait Functor[F[T]] {
-  def map[A, B](fa: F[A])(f: A => B): F[B]
-}
-
 trait Foldable[F[T]] {
   def fold[T](v: F[T])(implicit m: Monoid[T]): T
 }
