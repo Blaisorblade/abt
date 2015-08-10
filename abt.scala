@@ -11,15 +11,15 @@ trait Foldable[F[T]] {
 }
 
 trait Monoid[T] {
-  def unit: T
-  def join(a: T, b: T): T
+  def zero: T
+  def append(a: T, b: T): T
 }
 
 object Monoid {
   implicit def setMonoid[T] =
     new Monoid[Set[T]] {
-      def unit = Set.empty
-      def join(a: Set[T], b: Set[T]): Set[T] = a ++ b
+      def zero = Set.empty
+      def append(a: Set[T], b: Set[T]): Set[T] = a ++ b
     }
 }
 
@@ -138,8 +138,8 @@ trait ABTs {
         v match {
           case Abs(t) => t
           case Annot(_, t) => t
-          case App(t1, t2) => m.join(t1, t2)
-          case Let(t1, t2) => m.join(t1, t2)
+          case App(t1, t2) => m.append(t1, t2)
+          case Let(t1, t2) => m.append(t1, t2)
         }
     }
 
