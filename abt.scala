@@ -3,27 +3,16 @@ package abt
 import language.higherKinds
 
 import scalaz.Functor
+import scalaz.Foldable
+import scalaz.Monoid
 
-// Semi-standard typeclasses.
-// TODO: Refactor to use Scalaz/Cats {{{
-trait Foldable[F[T]] {
-  def fold[T](v: F[T])(implicit m: Monoid[T]): T
-}
-
-trait Monoid[T] {
-  def zero: T
-  def append(a: T, b: T): T
-}
-
-object Monoid {
+trait ABTs {
+  //Not part of Scalaz, unless we switch to Scalaz's Set.
   implicit def setMonoid[T] =
     new Monoid[Set[T]] {
       def zero = Set.empty
-      def append(a: Set[T], b: Set[T]): Set[T] = a ++ b
+      def append(a: Set[T], b: => Set[T]): Set[T] = a ++ b
     }
-}
-
-trait ABTs {
   type Name = String
   type Vars = Set[Name]
   /* XXX: Don't use I for interfaces. What's the right convention? */
@@ -126,7 +115,7 @@ trait ABTs {
   case class Annot[T](tp: SimpleType, t: T) extends TLambda[T]
 
   implicit val lambdaSig: Functor[TLambda] with Foldable[TLambda] =
-    new Functor[TLambda] with Foldable[TLambda] {
+    new Functor[TLambda] with Foldable[TLambda] with Foldable.FromFoldMap[TLambda] {
       def map[A, B](fa: TLambda[A])(f: A => B): TLambda[B] = fa match {
         case Abs(t) => Abs(f(t))
         case Annot(tp, t) => Annot(tp, f(t))
@@ -134,12 +123,12 @@ trait ABTs {
         case Let(t1, t2) => Let(f(t1), f(t2))
       }
 
-      def fold[T](v: TLambda[T])(implicit m: Monoid[T]): T =
-        v match {
-          case Abs(t) => t
-          case Annot(_, t) => t
-          case App(t1, t2) => m.append(t1, t2)
-          case Let(t1, t2) => m.append(t1, t2)
+      def foldMap[A,B](fa: TLambda[A])(f: A => B)(implicit F: Monoid[B]): B =
+        fa match {
+          case Abs(t) => f(t)
+          case Annot(_, t) => f(t)
+          case App(t1, t2) => F.append(f(t1), f(t2))
+          case Let(t1, t2) => F.append(f(t1), f(t2))
         }
     }
 
