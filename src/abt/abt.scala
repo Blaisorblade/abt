@@ -152,3 +152,61 @@ object Lambda {
 
   val lambdaAbt: IAbt[TLambda] = new Abt
 }
+
+object Bidir {
+  import Lambda._
+  import Lambda.lambdaAbt._
+
+  type Ctx = Map[Name, SimpleType]
+
+  def isSynth: BindingTerm[Term] => Boolean = {
+    case Tm(Lam(_)) => false
+    case Tm(Let(_, _)) => false
+    case _ => true
+  }
+  def isCheck(bt: BindingTerm[Term]): Boolean = !isSynth(bt)
+
+  def fail(msg: String) =
+    throw new IllegalArgumentException(msg)
+
+  def synth(ctx: Ctx, e: Term): SimpleType = {
+    e match {
+      case Term(Var(x)) =>
+        ctx get x getOrElse fail("unbound variable")
+      case Term(Tm(Annot(tp, e))) =>
+        check(ctx, e, tp)
+        tp
+      case Term(Tm(App(f, e))) =>
+        synth(ctx, f) match {
+          case Arrow(s, t) =>
+            check(ctx, e, s)
+            t
+          case _ => fail("Applying a non-function!")
+        }
+      case Term(body) if isCheck(body) =>
+        fail("Cannot synthesize type for checking term")
+      case _ =>
+        fail("Unexpected term")
+    }
+  }
+
+  def check(ctx: Ctx, e: Term, tp: SimpleType): Unit = {
+    (e, tp) match {
+      //Lambda
+      case (Term(Tm(Lam(Term(Abs(x, e1))))), Arrow(tp1, tp2)) =>
+        check(ctx updated (x, tp1), ??? /*e1*/ , tp2)
+      case (Term(Tm(Lam(t))), _) =>
+        fail("Expected arrow type")
+      //Let
+      case (Term(Tm(Let(e1, Abs(x, e2)))), _) =>
+        val tp1 = synth(ctx, e1)
+        check(ctx updated (x, tp1), ??? /*e2*/, tp)
+      case (Term(body), _) if isSynth(body) =>
+        if (tp == synth(ctx, e))
+          ()
+        else fail("Type mismatch")
+      case _ =>
+        fail("Unexpected term")
+    }
+  }
+}
