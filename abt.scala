@@ -8,7 +8,7 @@ trait Functor[F[T]] {
   def map[A, B](f: A => B): F[A] => F[B]
 }
 
-trait Foldable[F[T]] extends Functor[F] {
+trait Foldable[F[T]] {
   def fold[T](v: F[T])(implicit m: Monoid[T]): T
 }
 
@@ -52,12 +52,12 @@ trait ABTs {
     def subst(outer: Term, v: Name, inner: Term): Term
   }
 
-  class Abt[Signature[T]](implicit FoldableSignature: Foldable[Signature])
+  class Abt[Signature[_]](implicit FoldableSignature: Foldable[Signature], FuncSign: Functor[Signature])
       extends IAbt[Signature] {
     def map[A, B](f: A => B): BindingTerm[A] => BindingTerm[B] = {
       case Var(n) => Var(n)
       case Abs(n, body) => Abs(n, f(body))
-      case Tm(t) => Tm(FoldableSignature.map(f)(t))
+      case Tm(t) => Tm(FuncSign.map(f)(t))
     }
 
     case class Term(vars: Vars, t: BindingTerm[Term])
@@ -76,7 +76,7 @@ trait ABTs {
       Term(freeVars(body) - n, Abs(n, body))
 
     def makeTm(t: Signature[Term]): Term =
-      Term(FoldableSignature.fold(FoldableSignature.map(freeVars)(t)), Tm(t))
+      Term(FoldableSignature.fold(FuncSign.map(freeVars)(t)), Tm(t))
 
     def freeVars(t: Term): Vars = t.vars
 
@@ -99,7 +99,7 @@ trait ABTs {
       out(outer) match {
         case Var(name) if v == name => inner
         case Tm(body) =>
-          makeTm(FoldableSignature.map[Term, Term](x => subst(x, v, inner, preRename))(body))
+          makeTm(FuncSign.map[Term, Term](x => subst(x, v, inner, preRename))(body))
         case Abs(name, body) if v != name =>
           val (name1, body1) =
             if (preRename) {
@@ -127,8 +127,8 @@ trait ABTs {
   case class Let[T](t1: T, t2: T) extends TLambda[T]
   case class Annot[T](tp: SimpleType, t: T) extends TLambda[T]
 
-  implicit val lambdaSig: Foldable[TLambda] =
-    new Foldable[TLambda] {
+  implicit val lambdaSig: Functor[TLambda] with Foldable[TLambda] =
+    new Functor[TLambda] with Foldable[TLambda] {
       def map[A, B](f: A => B): TLambda[A] => TLambda[B] = {
         case Abs(t) => Abs(f(t))
         case Annot(tp, t) => Annot(tp, f(t))
