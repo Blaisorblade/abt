@@ -107,7 +107,7 @@ class Abt[Signature[_]: Functor: Foldable] extends IAbt[Signature] {
       case Abs(name, body) if v != name =>
         val (name1, body1) =
           if (preRename) {
-            val newName = fresh(name, freeVars(body) ++ freeVars(outer))
+            val newName = fresh(name, freeVars(body) ++ freeVars(inner))
             val newBody = subst(body, name, makeVar(newName), false)
             (newName, newBody)
           } else {
