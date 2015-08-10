@@ -43,6 +43,13 @@ trait IAbt[Signature[T]] {
     def apply(t: BindingTerm[Term]): Term = into(t)
     def unapply(t: Term): Some[BindingTerm[Term]] = Some(out(t))
   }
+  object TermSig {
+    def apply(t: Signature[Term]): Term = Term(Tm(t))
+    def unapply(t: Term): Option[Signature[Term]] = t match {
+      case Term(Tm(t1)) => Some(t1)
+      case _ => None
+    }
+  }
 
   //Term is isomorphic to BindingTerm[Term]
   def into(t: BindingTerm[Term]): Term
@@ -151,6 +158,18 @@ object Lambda {
     }
 
   val lambdaAbt: IAbt[TLambda] = new Abt
+
+  import lambdaAbt._
+
+  def var_(name: Name): Term = Term(Var(name))
+  def lambda(name: Name, body: Term): Term =
+    TermSig(Lam(Term(Abs(name, body))))
+  def app(f: Term, arg: Term): Term =
+    TermSig(App(f, arg))
+  def annot(t: Term, tp: SimpleType): Term =
+    TermSig(Annot(tp, t))
+  def let(name: Name, t1: Term, t2: Term): Term =
+    TermSig(Let(t1, Term(Abs(name, t2))))
 }
 
 object Bidir {
@@ -173,10 +192,10 @@ object Bidir {
     e match {
       case Term(Var(x)) =>
         ctx get x getOrElse fail("unbound variable")
-      case Term(Tm(Annot(tp, e))) =>
+      case TermSig(Annot(tp, e)) =>
         check(ctx, e, tp)
         tp
-      case Term(Tm(App(f, e))) =>
+      case TermSig(App(f, e)) =>
         synth(ctx, f) match {
           case Arrow(s, t) =>
             check(ctx, e, s)
@@ -193,12 +212,12 @@ object Bidir {
   def check(ctx: Ctx, e: Term, tp: SimpleType): Unit = {
     (e, tp) match {
       //Lambda
-      case (Term(Tm(Lam(Term(Abs(x, e1))))), Arrow(tp1, tp2)) =>
+      case (TermSig(Lam(Term(Abs(x, e1)))), Arrow(tp1, tp2)) =>
         check(ctx updated (x, tp1), ??? /*e1*/ , tp2)
-      case (Term(Tm(Lam(t))), _) =>
+      case (TermSig(Lam(t)), _) =>
         fail("Expected arrow type")
       //Let
-      case (Term(Tm(Let(e1, Abs(x, e2)))), _) =>
+      case (TermSig(Let(e1, Abs(x, e2))), _) =>
         val tp1 = synth(ctx, e1)
         check(ctx updated (x, tp1), ??? /*e2*/, tp)
       case (Term(body), _) if isSynth(body) =>
