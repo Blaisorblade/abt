@@ -14,7 +14,7 @@ object ABTs {
       def append(a: Set[T], b: => Set[T]): Set[T] = a ++ b
     }
   type Name = String
-  type Vars = Set[Name]
+  type Names = Set[Name]
 }
 
 import ABTs._
@@ -44,7 +44,7 @@ trait IAbt[Signature[T]] {
   def into(t: BindingTerm[Term]): Term
   def out(t: Term): BindingTerm[Term]
 
-  def freeVars(t: Term): Vars
+  def freeVars(t: Term): Names
 
   def makeVar(n: Name): Term
   def makeAbs(n: Name, body: Term): Term
@@ -59,7 +59,7 @@ class Abt[Signature[_]: Functor: Foldable] extends IAbt[Signature] {
     case Tm(t) => Tm(Functor[Signature].map(t)(f))
   }
 
-  case class Term(vars: Vars, t: BindingTerm[Term])
+  case class Term(vars: Names, t: BindingTerm[Term])
 
   def into(t: BindingTerm[Term]): Term =
     t match {
@@ -77,14 +77,14 @@ class Abt[Signature[_]: Functor: Foldable] extends IAbt[Signature] {
   def makeTm(t: Signature[Term]): Term =
     Term(Foldable[Signature].fold(Functor[Signature].map(t)(freeVars)), Tm(t))
 
-  def freeVars(t: Term): Vars = t.vars
+  def freeVars(t: Term): Names = t.vars
 
   var index = 0
   def fresh(): Name = {
     index += 1
     "x" + index
   }
-  def fresh(baseName: Name, vars: Vars): Name =
+  def fresh(baseName: Name, vars: Names): Name =
     if (vars contains baseName)
       fresh(baseName + "'", vars)
     else
