@@ -5,7 +5,7 @@ import language.higherKinds
 // Semi-standard typeclasses.
 // TODO: Refactor to use Scalaz/Cats {{{
 trait Functor[F[T]] {
-  def map[A, B](f: A => B): F[A] => F[B]
+  def map[A, B](fa: F[A])(f: A => B): F[B]
 }
 
 trait Foldable[F[T]] {
@@ -57,7 +57,7 @@ trait ABTs {
     def map[A, B](f: A => B): BindingTerm[A] => BindingTerm[B] = {
       case Var(n) => Var(n)
       case Abs(n, body) => Abs(n, f(body))
-      case Tm(t) => Tm(FuncSign.map(f)(t))
+      case Tm(t) => Tm(FuncSign.map(t)(f))
     }
 
     case class Term(vars: Vars, t: BindingTerm[Term])
@@ -76,7 +76,7 @@ trait ABTs {
       Term(freeVars(body) - n, Abs(n, body))
 
     def makeTm(t: Signature[Term]): Term =
-      Term(FoldableSignature.fold(FuncSign.map(freeVars)(t)), Tm(t))
+      Term(FoldableSignature.fold(FuncSign.map(t)(freeVars)), Tm(t))
 
     def freeVars(t: Term): Vars = t.vars
 
@@ -99,7 +99,7 @@ trait ABTs {
       out(outer) match {
         case Var(name) if v == name => inner
         case Tm(body) =>
-          makeTm(FuncSign.map[Term, Term](x => subst(x, v, inner, preRename))(body))
+          makeTm(FuncSign.map[Term, Term](body)(x => subst(x, v, inner, preRename)))
         case Abs(name, body) if v != name =>
           val (name1, body1) =
             if (preRename) {
@@ -129,7 +129,7 @@ trait ABTs {
 
   implicit val lambdaSig: Functor[TLambda] with Foldable[TLambda] =
     new Functor[TLambda] with Foldable[TLambda] {
-      def map[A, B](f: A => B): TLambda[A] => TLambda[B] = {
+      def map[A, B](fa: TLambda[A])(f: A => B): TLambda[B] = fa match {
         case Abs(t) => Abs(f(t))
         case Annot(tp, t) => Annot(tp, f(t))
         case App(t1, t2) => App(f(t1), f(t2))
