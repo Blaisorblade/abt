@@ -122,7 +122,7 @@ object Lambda {
   case class Arrow(t1: SimpleType, t2: SimpleType) extends SimpleType
 
   sealed trait TLambda[T]
-  case class Abs[T](t: T) extends TLambda[T]
+  case class Lam[T](t: T) extends TLambda[T]
   case class App[T](t1: T, t2: T) extends TLambda[T]
   case class Let[T](t1: T, t2: T) extends TLambda[T]
   case class Annot[T](tp: SimpleType, t: T) extends TLambda[T]
@@ -130,7 +130,7 @@ object Lambda {
   implicit val lambdaSig: Functor[TLambda] with Foldable[TLambda] =
     new Functor[TLambda] with Foldable[TLambda] with Foldable.FromFoldMap[TLambda] {
       def map[A, B](fa: TLambda[A])(f: A => B): TLambda[B] = fa match {
-        case Abs(t) => Abs(f(t))
+        case Lam(t) => Lam(f(t))
         case Annot(tp, t) => Annot(tp, f(t))
         case App(t1, t2) => App(f(t1), f(t2))
         case Let(t1, t2) => Let(f(t1), f(t2))
@@ -138,7 +138,7 @@ object Lambda {
 
       def foldMap[A,B](fa: TLambda[A])(f: A => B)(implicit F: Monoid[B]): B =
         fa match {
-          case Abs(t) => f(t)
+          case Lam(t) => f(t)
           case Annot(_, t) => f(t)
           case App(t1, t2) => F.append(f(t1), f(t2))
           case Let(t1, t2) => F.append(f(t1), f(t2))
