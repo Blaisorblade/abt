@@ -39,6 +39,10 @@ trait IAbt[Signature[T]] {
 
   //Abstract type of terms
   type Term
+  object Term {
+    def apply(t: BindingTerm[Term]): Term = into(t)
+    def unapply(t: Term): Some[BindingTerm[Term]] = Some(out(t))
+  }
 
   //Term is isomorphic to BindingTerm[Term]
   def into(t: BindingTerm[Term]): Term
@@ -59,7 +63,8 @@ class Abt[Signature[_]: Functor: Foldable] extends IAbt[Signature] {
     case Tm(t) => Tm(Functor[Signature].map(t)(f))
   }
 
-  case class Term(vars: Names, t: BindingTerm[Term])
+  type Term = TermInt
+  case class TermInt(vars: Names, t: BindingTerm[Term])
 
   def into(t: BindingTerm[Term]): Term =
     t match {
@@ -70,12 +75,12 @@ class Abt[Signature[_]: Functor: Foldable] extends IAbt[Signature] {
 
   def out(t: Term): BindingTerm[Term] = t.t
 
-  def makeVar(n: Name): Term = Term(Set(n), Var(n))
+  def makeVar(n: Name): Term = TermInt(Set(n), Var(n))
   def makeAbs(n: Name, body: Term): Term =
-    Term(freeVars(body) - n, Abs(n, body))
+    TermInt(freeVars(body) - n, Abs(n, body))
 
   def makeTm(t: Signature[Term]): Term =
-    Term(Foldable[Signature].fold(Functor[Signature].map(t)(freeVars)), Tm(t))
+    TermInt(Foldable[Signature].fold(Functor[Signature].map(t)(freeVars)), Tm(t))
 
   def freeVars(t: Term): Names = t.vars
 
