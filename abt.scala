@@ -1,4 +1,5 @@
 // Translate https://gist.github.com/neel-krishnaswami/834b892327271e348f79
+package abt
 import language.higherKinds
 
 // Semi-standard typeclasses.
