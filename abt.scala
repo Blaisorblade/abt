@@ -17,12 +17,21 @@ trait ABTs {
   type Vars = Set[Name]
   /* XXX: Don't use I for interfaces. What's the right convention? */
   trait IAbt[Signature[T]] {
+    outer =>
+
     //Concrete type used to build terms.
     sealed trait BindingTerm[T]
     case class Var[A](n: Name) extends BindingTerm[A]
     case class Abs[T](n: Name, t: T) extends BindingTerm[T]
     case class Tm[T](t: Signature[T]) extends BindingTerm[T]
-    def map[A, B](f: A => B): BindingTerm[A] => BindingTerm[B]
+    def map[A, B](bt: BindingTerm[A])(f: A => B): BindingTerm[B]
+
+    object BindingTerm {
+      implicit val isFunctor =
+        new Functor[BindingTerm] {
+          def map[A, B](bt: BindingTerm[A])(f: A => B): BindingTerm[B] = outer.map(bt)(f)
+        }
+    }
 
     //Abstract type of terms
     type Term
@@ -40,7 +49,7 @@ trait ABTs {
   }
 
   class Abt[Signature[_]: Functor: Foldable] extends IAbt[Signature] {
-    def map[A, B](f: A => B): BindingTerm[A] => BindingTerm[B] = {
+    def map[A, B](bt: BindingTerm[A])(f: A => B): BindingTerm[B] = bt match {
       case Var(n) => Var(n)
       case Abs(n, body) => Abs(n, f(body))
       case Tm(t) => Tm(Functor[Signature].map(t)(f))
