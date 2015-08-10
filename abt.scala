@@ -39,12 +39,11 @@ trait ABTs {
     def subst(outer: Term, v: Name, inner: Term): Term
   }
 
-  class Abt[Signature[_]](implicit FoldableSignature: Foldable[Signature], FuncSign: Functor[Signature])
-      extends IAbt[Signature] {
+  class Abt[Signature[_]: Functor: Foldable] extends IAbt[Signature] {
     def map[A, B](f: A => B): BindingTerm[A] => BindingTerm[B] = {
       case Var(n) => Var(n)
       case Abs(n, body) => Abs(n, f(body))
-      case Tm(t) => Tm(FuncSign.map(t)(f))
+      case Tm(t) => Tm(Functor[Signature].map(t)(f))
     }
 
     case class Term(vars: Vars, t: BindingTerm[Term])
@@ -63,7 +62,7 @@ trait ABTs {
       Term(freeVars(body) - n, Abs(n, body))
 
     def makeTm(t: Signature[Term]): Term =
-      Term(FoldableSignature.fold(FuncSign.map(t)(freeVars)), Tm(t))
+      Term(Foldable[Signature].fold(Functor[Signature].map(t)(freeVars)), Tm(t))
 
     def freeVars(t: Term): Vars = t.vars
 
@@ -86,7 +85,7 @@ trait ABTs {
       out(outer) match {
         case Var(name) if v == name => inner
         case Tm(body) =>
-          makeTm(FuncSign.map[Term, Term](body)(x => subst(x, v, inner, preRename)))
+          makeTm(Functor[Signature].map[Term, Term](body)(x => subst(x, v, inner, preRename)))
         case Abs(name, body) if v != name =>
           val (name1, body1) =
             if (preRename) {
