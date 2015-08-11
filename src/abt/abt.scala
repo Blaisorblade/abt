@@ -34,24 +34,24 @@ trait IAbt[Signature[T]] {
   outer =>
 
   //Concrete type used to build terms.
-  sealed trait BindingTerm[T]
-  case class Var[A](n: Name) extends BindingTerm[A]
-  case class Abs[T](n: Name, t: T) extends BindingTerm[T]
-  case class Tm[T](t: Signature[T]) extends BindingTerm[T]
-  def map[A, B](bt: BindingTerm[A])(f: A => B): BindingTerm[B]
+  sealed trait _Term[T]
+  case class Var[A](n: Name) extends _Term[A]
+  case class Abs[T](n: Name, t: T) extends _Term[T]
+  case class Tm[T](t: Signature[T]) extends _Term[T]
+  def map[A, B](bt: _Term[A])(f: A => B): _Term[B]
 
-  object BindingTerm {
+  object _Term {
     implicit val isFunctor =
-      new Functor[BindingTerm] {
-        def map[A, B](bt: BindingTerm[A])(f: A => B): BindingTerm[B] = outer.map(bt)(f)
+      new Functor[_Term] {
+        def map[A, B](bt: _Term[A])(f: A => B): _Term[B] = outer.map(bt)(f)
       }
   }
 
   //Abstract type of terms
   type Term
   object Term {
-    def apply(t: BindingTerm[Term]): Term = into(t)
-    def unapply(t: Term): Some[BindingTerm[Term]] = Some(out(t))
+    def apply(t: _Term[Term]): Term = into(t)
+    def unapply(t: Term): Some[_Term[Term]] = Some(out(t))
   }
   object TermSig {
     def apply(t: Signature[Term]): Term = Term(Tm(t))
@@ -61,9 +61,9 @@ trait IAbt[Signature[T]] {
     }
   }
 
-  //Term is isomorphic to BindingTerm[Term]
-  def into(t: BindingTerm[Term]): Term
-  def out(t: Term): BindingTerm[Term]
+  //Term is isomorphic to _Term[Term]
+  def into(t: _Term[Term]): Term
+  def out(t: Term): _Term[Term]
 
   def freeVars(t: Term): Names
 
@@ -75,23 +75,23 @@ trait IAbt[Signature[T]] {
 }
 
 class Abt[Signature[_]: Functor: Foldable] extends IAbt[Signature] {
-  def map[A, B](bt: BindingTerm[A])(f: A => B): BindingTerm[B] = bt match {
+  def map[A, B](bt: _Term[A])(f: A => B): _Term[B] = bt match {
     case Var(n) => Var(n)
     case Abs(n, body) => Abs(n, f(body))
     case Tm(t) => Tm(Functor[Signature].map(t)(f))
   }
 
   type Term = TermInt
-  case class TermInt(vars: Names, t: BindingTerm[Term])
+  case class TermInt(vars: Names, t: _Term[Term])
 
-  def into(t: BindingTerm[Term]): Term =
+  def into(t: _Term[Term]): Term =
     t match {
       case Var(n) => makeVar(n)
       case Abs(n, body) => makeAbs(n, body)
       case Tm(t) => makeTm(t)
     }
 
-  def out(t: Term): BindingTerm[Term] = t.t
+  def out(t: Term): _Term[Term] = t.t
 
   def makeVar(n: Name): Term = TermInt(Set(n), Var(n))
   def makeAbs(n: Name, body: Term): Term =
@@ -207,12 +207,12 @@ object Bidir {
 
   type Ctx = Map[Name, SimpleType]
 
-  def isSynth: BindingTerm[Term] => Boolean = {
+  def isSynth: _Term[Term] => Boolean = {
     case Tm(Lam(_)) => false
     case Tm(Let(_, _)) => false
     case _ => true
   }
-  def isCheck(bt: BindingTerm[Term]): Boolean = !isSynth(bt)
+  def isCheck(bt: _Term[Term]): Boolean = !isSynth(bt)
 
   def fail(msg: String) =
     throw new IllegalArgumentException(msg)
