@@ -13,3 +13,6 @@ javaSource in Compile := (scalaSource in Compile).value
 javaSource in Test := (scalaSource in Test).value
 
 EclipseKeys.eclipseOutput in ThisBuild := Some("bin")
+
+initialCommands in console := "import abt._; import Lambda._; import Lambda.lambdaAbt._"
+
