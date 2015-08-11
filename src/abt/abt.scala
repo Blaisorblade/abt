@@ -13,6 +13,16 @@ object ABTs {
       def zero = Set.empty
       def append(a: Set[T], b: => Set[T]): Set[T] = a ++ b
     }
+  implicit def seqMonoid[T] =
+    new Monoid[Seq[T]] {
+      def zero = Seq.empty
+      def append(a: Seq[T], b: => Seq[T]): Seq[T] = a ++ b
+    }
+  implicit def vectorMonoid[T] =
+    new Monoid[Vector[T]] {
+      def zero = Vector.empty
+      def append(a: Vector[T], b: => Vector[T]): Vector[T] = a ++ b
+    }
   type Name = String
   type Names = Set[Name]
 }
