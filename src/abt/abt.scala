@@ -71,6 +71,7 @@ trait IAbt[Signature[T]] {
   def makeAbs(n: Name, body: Term): Term
   def makeTm(t: Signature[Term]): Term
   def subst(outer: Term, v: Name, inner: Term): Term
+  def alphaEquiv(t1: Term, t2: Term): Boolean
 }
 
 class Abt[Signature[_]: Functor: Foldable] extends IAbt[Signature] {
@@ -115,6 +116,9 @@ class Abt[Signature[_]: Functor: Foldable] extends IAbt[Signature] {
   def subst(outer: Term, v: Name, inner: Term): Term =
     subst(outer, v, inner, true)
 
+  def children[T](s: Signature[T]): Vector[T] =
+    Foldable[Signature].fold(Functor[Signature].map(s)(Vector(_)))
+
   //This is a basic substitution with quadratic complexity.
   def subst(outer: Term, v: Name, inner: Term, preRename: Boolean): Term =
     out(outer) match {
@@ -136,6 +140,21 @@ class Abt[Signature[_]: Functor: Foldable] extends IAbt[Signature] {
       case _ => //For when guards fail
         outer
     }
+
+  //XXX this is also quadratic
+  def alphaEquiv(t1: Term, t2: Term): Boolean = {
+    (out(t1), out(t2)) match {
+      case (Var(n1), Var(n2)) => n1 == n2
+      case (Abs(n1, b1), Abs(n2, b2)) =>
+        val freshV = makeVar(fresh())
+        alphaEquiv(subst(b1, n1, freshV), subst(b2, n2, freshV))
+      case (Tm(s1), Tm(s2)) =>
+        val c1 = children(s1)
+        val c2 = children(s2)
+        c1.length == c2.length && ((c1 zip c2) forall ((alphaEquiv _).tupled))
+      case _ => false
+    }
+  }
 }
 
 object Lambda {
