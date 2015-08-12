@@ -350,13 +350,13 @@ object Bidir {
     (e, tp) match {
       //Lambda
       case (Lam(x, e1), Arrow(tp1, tp2)) =>
-        check(ctx updated (x, tp1), ??? /*e1*/ , tp2)
+        check(ctx updated (x, tp1), e1, tp2)
       case (Lam(_, _), _) =>
         fail("Expected arrow type")
       //Let
       case (Let(x, e1, e2), _) =>
         val tp1 = synth(ctx, e1)
-        check(ctx updated (x, tp1), ??? /*e2*/, tp)
+        check(ctx updated (x, tp1), e2, tp)
       case _ if isSynth(e) =>
         if (tp == synth(ctx, e))
           ()
