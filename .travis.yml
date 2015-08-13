@@ -10,6 +10,7 @@ sudo: false
 cache:
   directories:
     - $HOME/.sbt/boot
+    - $HOME/.sbt/launchers
     - $HOME/.ivy2/cache
 install:
   - travis_retry sbt ++$TRAVIS_SCALA_VERSION update
