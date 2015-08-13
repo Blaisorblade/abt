@@ -12,7 +12,7 @@ cache:
     - $HOME/.sbt/boot
     - $HOME/.ivy2/cache
 install:
-  - travis_retry ++$TRAVIS_SCALA_VERSION update
+  - travis_retry sbt ++$TRAVIS_SCALA_VERSION update
 script:
   # Default Travis script.
   - sbt ++$TRAVIS_SCALA_VERSION test
