@@ -25,5 +25,7 @@ class AbtTests extends FunSuite {
 
   test("substitution testcases") {
     assert(Lam("x", Var("y")) subst ("y", Var("x")) alphaEquiv Lam("y", Var("x")))
+    assert(Lam("x", App(Var("y"), Lam("y", App(Var("y"), App(Var("x"), Var("z")))))) subst ("y", Var("x")) alphaEquiv
+        Lam("w", App(Var("x"), Lam("y", App(Var("y"), App(Var("w"), Var("z")))))))
   }
 }
