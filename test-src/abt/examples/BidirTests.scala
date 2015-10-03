@@ -1,8 +1,8 @@
 package abt
+package examples
 
-import Lambda._
-import Bidir._
-
+import LambdaCalc._
+import BidirTypechecking._
 import org.scalatest.FunSuite
 
 /**

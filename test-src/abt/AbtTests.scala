@@ -1,6 +1,6 @@
 package abt
 
-import Lambda._
+import examples.LambdaCalc._
 
 import org.scalatest.FunSuite
 
