@@ -215,17 +215,30 @@ class Abt[Signature[_]: Functor: Foldable] extends IAbt[Signature] {
         outer
     }
 
-  //XXX this is also quadratic
   def _alphaEquiv(t1: Term, t2: Term): Boolean = {
+    alphaEquivLoop(t1, t2, Map(), Map())
+  }
+
+  /**
+    * A linear-time implementation of alpha-equivalence checking.
+    */
+  def alphaEquivLoop(t1: Term, t2: Term, map1: Map[Name, Name], map2: Map[Name, Name]): Boolean = {
     (_out(t1), _out(t2)) match {
-      case (_Var(n1), _Var(n2)) => n1 == n2
+      case (_Var(n1), _Var(n2)) =>
+        (map1 get n1, map2 get n2) match {
+          case (Some(renamedN1), Some(renamedN2)) => renamedN1 == renamedN2
+          case (None, None) => n1 == n2
+          case _ => false
+        }
       case (__Abs(n1, b1), __Abs(n2, b2)) =>
-        val freshV = Var(fresh())
-        _alphaEquiv(_subst(b1, n1, freshV), _subst(b2, n2, freshV))
+        val freshName = fresh()
+        alphaEquivLoop(b1, b2, map1 + (n1 -> freshName), map2 + (n2 -> freshName))
       case (_Tm(s1), _Tm(s2)) =>
         val c1 = children(s1)
         val c2 = children(s2)
-        c1.length == c2.length && ((c1 zip c2) forall ((_alphaEquiv _).tupled))
+        c1.length == c2.length && (c1 zip c2).forall {
+          case (t1, t2) => alphaEquivLoop(t1, t2, map1, map2)
+        }
       case _ => false
     }
   }
