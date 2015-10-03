@@ -4,16 +4,22 @@ While this might grow into more (say, a usable library), currently this is a
 playground for me to learn about Abstract Binding Trees.
 
 I started off from the code in
-http://semantic-domain.blogspot.de/2015/03/abstract-binding-trees.html
+http://semantic-domain.blogspot.de/2015/03/abstract-binding-trees.html.
+
+Scala-specific goodies:
+- simplify manipulating ABTs through extractors, so you can write `Lam("x", Var("x"))` instead of the underlying
+  `TermInt(Set(),_Tm(_Lam(TermInt(Set(),__Abs(x,TermInt(Set(x),_Var(x)))))))`.
+  Unfortunately, the latter is still visible through `.toString`, and calls for an
+  implemetation of pretty-printing.
 
 There are many possible TODOs:
+
 1. Use better algorithms -- the blog post declares it's using simple ones
    - For instance, use parallel substitution to avoid quadratic complexity.
    - Avoid concatenating string to build names, that's slow.
    - Replace the freshness generator with something faster.
-     2. To allow easy manipulation of the resulting ASTs, implement smart constructors and extractors.
-   Clarify how to use the resulting language. Neelk's example code accesses
-   directly the implementation of ABTs. In particular, implement smart
+2. Review those fancier algorithms to ensure they're correct --- ABT
+   mean you need to get binding right only once, but you still have to.
 3. Try out whether the implementation can use other techniques: Must one use
    names to implement ABTs, or would it be possible to use, say, deBrujin
    indexes? ABTs relate to HOAS, and are in fact probably a more awkward
