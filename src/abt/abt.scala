@@ -18,6 +18,7 @@
 package abt
 
 import language.higherKinds
+import language.implicitConversions
 import scalaz.Functor
 import scalaz.Foldable
 import scalaz.Monoid
@@ -39,7 +40,10 @@ object ABTs {
       def zero = Vector.empty
       def append(a: Vector[T], b: => Vector[T]): Vector[T] = a ++ b
     }
-  type Name = String
+  case class Name(s: String, n: Int = 0) {
+    override def toString = s"${s}_${n}"
+  }
+  implicit def toName(s: String) = Name(s)
   type Names = Set[Name]
 }
 
@@ -180,12 +184,13 @@ class Abt[Signature[_]: Functor: Foldable] extends IAbt[Signature] {
   var index = 0
   def fresh(): Name = {
     index += 1
-    "x" + index
+    Name("x", index)
   }
   def fresh(baseName: Name, vars: Names): Name =
-    if (vars contains baseName)
-      fresh(baseName + "'", vars)
-    else
+    if (vars contains baseName) {
+      val Name(name, idx) = baseName
+      fresh(Name(name, idx + 1), vars)
+    } else
       baseName
 
   def _substQuadratic(outer: Term, v: Name, inner: Term): Term =

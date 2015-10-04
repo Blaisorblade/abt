@@ -10,7 +10,7 @@ import org.scalatest.FunSuite
  */
 class BidirTests extends FunSuite {
   test("Simple tests for bidirectional type checking") ({
-    check(Map("x" -> Base), Var("x"), Base)
+    check(Map(Name("x") -> Base), Var("x"), Base)
     val tId = Arrow(Base, Base)
     check(Map.empty, Lam("x", Var("x")), tId)
     check(Map.empty, Lam("x", Var("x")), Arrow(tId, tId))

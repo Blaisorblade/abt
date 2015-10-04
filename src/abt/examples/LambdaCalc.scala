@@ -43,6 +43,8 @@ object LambdaCalc {
   //Needed reexports
   type Term = lambdaAbt.Term
   val Var = lambdaAbt.Var
+  type Name = ABTs.Name
+  val Name = ABTs.Name
   implicit val TermOps = lambdaAbt.TermOps _
 
   //
