@@ -187,33 +187,62 @@ class Abt[Signature[_]: Functor: Foldable] extends IAbt[Signature] {
     else
       baseName
 
-  def _subst(outer: Term, v: Name, inner: Term): Term =
-    subst(outer, v, inner, true)
+  def _substQuadratic(outer: Term, v: Name, inner: Term): Term =
+    substQuadratic(outer, v, inner, true)
 
   def children[T](s: Signature[T]): Vector[T] =
     Foldable[Signature].fold(Functor[Signature].map(s)(Vector(_)))
 
   //This is a basic substitution with quadratic complexity.
-  def subst(outer: Term, v: Name, inner: Term, preRename: Boolean): Term =
+  def substQuadratic(outer: Term, v: Name, inner: Term, preRename: Boolean): Term =
     _out(outer) match {
       case _Var(name) if v == name => inner
       case _Tm(body) =>
-        _mkTm(Functor[Signature].map[Term, Term](body)(x => subst(x, v, inner, preRename)))
+        _TermSig(Functor[Signature].map[Term, Term](body)(x => substQuadratic(x, v, inner, preRename)))
       case __Abs(name, body) if v != name =>
         val (name1, body1) =
           if (preRename) {
             val newName = fresh(name, _freeVars(body) ++ _freeVars(inner))
-            val newBody = subst(body, name, Var(newName), false)
+            val newBody = substQuadratic(body, name, Var(newName), false)
             (newName, newBody)
           } else {
             //We're replacing
             (name, body)
           }
-        val body2 = subst(body1, v, inner, preRename)
+        val body2 = substQuadratic(body1, v, inner, preRename)
         _Abs(name1, body2)
       case _ => //For when guards fail
         outer
     }
+
+  def _subst(outer: Term, v: Name, inner: Term): Term =
+    subst(outer, _freeVars(inner), Map(v -> inner))
+
+  /**
+   * Parallel substitution.
+   * Precondition:
+   *   map.values.flatMap(_freeVars).toSet == fvInners
+   */
+  def subst(outer: Term, fvInners: Set[Name], map: Map[Name, Term]): Term = {
+    assert(map.values.flatMap(_freeVars).toSet.subsetOf(fvInners),
+      s"!${map.values.flatMap(_freeVars).toSet}.subsetOf($fvInners)")
+    //Even stronger assertion
+    assert(map.values.flatMap(_freeVars).toSet == fvInners,
+      s"${map.values.flatMap(_freeVars).toSet} != $fvInners")
+    _out(outer) match {
+      case _Var(name) =>
+        map get name getOrElse outer
+      case _Tm(body) =>
+        _TermSig(Functor[Signature].map[Term, Term](body)(x => subst(x, fvInners, map)))
+      case __Abs(name, body) =>
+        val newName = fresh(name, (_freeVars(body) - name) ++ fvInners)
+        val varsToRemove = map get name map _freeVars getOrElse Set()
+        val newBody = subst(body, fvInners -- varsToRemove + newName, map + (name -> Var(newName)))
+        _Abs(newName, newBody)
+      case _ => //For when guards fail
+        outer
+    }
+  }
 
   def _alphaEquiv(t1: Term, t2: Term): Boolean = {
     alphaEquivLoop(t1, t2, Map(), Map())
