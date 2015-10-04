@@ -103,7 +103,7 @@ trait IAbt[Signature[_]] {
   }
 
   object _TermSig {
-    def apply(t: Signature[Term]): Term = _Term(_Tm(t))
+    def apply(t: Signature[Term]): Term = _mkTm(t)
     def unapply(t: Term): Option[Signature[Term]] = t match {
       case _Term(_Tm(t1)) => Some(t1)
       case _ => None
