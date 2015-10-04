@@ -85,9 +85,9 @@ trait IAbt[Signature[_]] {
   }
 
   implicit class TermOps(t: Term) {
-    def freeVars: Names = _freeVars(t)
-    def subst(v: Name, inner: Term): Term = _subst(t, v, inner)
-    def alphaEquiv(other: Term): Boolean = _alphaEquiv(t, other)
+    @inline def freeVars: Names = _freeVars(t)
+    @inline def subst(v: Name, inner: Term): Term = _subst(t, v, inner)
+    @inline def alphaEquiv(other: Term): Boolean = _alphaEquiv(t, other)
   }
 
   /*
