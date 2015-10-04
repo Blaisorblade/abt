@@ -102,10 +102,10 @@ trait IAbt[Signature[_]] {
     def unapply(t: Term): Some[__Term[Term]] = Some(_out(t))
   }
 
-  object _TermSig {
+  object _Tm {
     def apply(t: Signature[Term]): Term = _mkTm(t)
     def unapply(t: Term): Option[Signature[Term]] = t match {
-      case _Term(_Tm(t1)) => Some(t1)
+      case _Term(__Tm(t1)) => Some(t1)
       case _ => None
     }
   }
@@ -129,7 +129,8 @@ trait IAbt[Signature[_]] {
   protected case class __Abs[T](n: Name, t: T) extends __Term[T]
 
   protected case class _Var[A](n: Name) extends __Term[A]
-  protected case class _Tm[T](t: Signature[T]) extends __Term[T]
+  //This is used by smart constructors of all other operations.
+  protected case class __Tm[T](t: Signature[T]) extends __Term[T]
 
   protected def map[A, B](bt: __Term[A])(f: A => B): __Term[B]
 
@@ -152,7 +153,7 @@ class Abt[Signature[_]: Functor: Foldable] extends IAbt[Signature] {
   def map[A, B](bt: __Term[A])(f: A => B): __Term[B] = bt match {
     case _Var(n) => _Var(n)
     case __Abs(n, body) => __Abs(n, f(body))
-    case _Tm(t) => _Tm(Functor[Signature].map(t)(f))
+    case __Tm(t) => __Tm(Functor[Signature].map(t)(f))
   }
 
   type Term = TermInt
@@ -162,7 +163,7 @@ class Abt[Signature[_]: Functor: Foldable] extends IAbt[Signature] {
     t match {
       case _Var(n) => _mkVar(n)
       case __Abs(n, body) => _mkAbs(n, body)
-      case _Tm(t) => _mkTm(t)
+      case __Tm(t) => _mkTm(t)
     }
 
   def _out(t: Term): __Term[Term] = t.t
@@ -172,7 +173,7 @@ class Abt[Signature[_]: Functor: Foldable] extends IAbt[Signature] {
     TermInt(_freeVars(body) - n, __Abs(n, body))
 
   def _mkTm(t: Signature[Term]): Term =
-    TermInt(Foldable[Signature].fold(Functor[Signature].map(t)(_freeVars)), _Tm(t))
+    TermInt(Foldable[Signature].fold(Functor[Signature].map(t)(_freeVars)), __Tm(t))
 
   def _freeVars(t: Term): Names = t.vars
 
@@ -197,8 +198,8 @@ class Abt[Signature[_]: Functor: Foldable] extends IAbt[Signature] {
   def substQuadratic(outer: Term, v: Name, inner: Term, preRename: Boolean): Term =
     _out(outer) match {
       case _Var(name) if v == name => inner
-      case _Tm(body) =>
-        _TermSig(Functor[Signature].map[Term, Term](body)(x => substQuadratic(x, v, inner, preRename)))
+      case __Tm(body) =>
+        _Tm(Functor[Signature].map[Term, Term](body)(x => substQuadratic(x, v, inner, preRename)))
       case __Abs(name, body) if v != name =>
         val (name1, body1) =
           if (preRename) {
@@ -232,8 +233,8 @@ class Abt[Signature[_]: Functor: Foldable] extends IAbt[Signature] {
     _out(outer) match {
       case _Var(name) =>
         map get name getOrElse outer
-      case _Tm(body) =>
-        _TermSig(Functor[Signature].map[Term, Term](body)(x => subst(x, fvInners, map)))
+      case __Tm(body) =>
+        _Tm(Functor[Signature].map[Term, Term](body)(x => subst(x, fvInners, map)))
       case __Abs(name, body) =>
         val newName = fresh(name, (_freeVars(body) - name) ++ fvInners)
         val varsToRemove = map get name map _freeVars getOrElse Set()
@@ -262,7 +263,7 @@ class Abt[Signature[_]: Functor: Foldable] extends IAbt[Signature] {
       case (__Abs(n1, b1), __Abs(n2, b2)) =>
         val freshName = fresh()
         alphaEquivLoop(b1, b2, map1 + (n1 -> freshName), map2 + (n2 -> freshName))
-      case (_Tm(s1), _Tm(s2)) =>
+      case (__Tm(s1), __Tm(s2)) =>
         val c1 = children(s1)
         val c2 = children(s2)
         c1.length == c2.length && (c1 zip c2).forall {

@@ -50,36 +50,36 @@ object LambdaCalc {
   //Smart constructors/extractors
   object Lam {
     def apply(name: Name, body: Term): Term =
-      _TermSig(_Lam(_Abs(name, body)))
+      _Tm(_Lam(_Abs(name, body)))
     def unapply(t: Term): Option[(Name, Term)] = t match {
-      case _TermSig(_Lam(_Abs(name, body))) => Some((name, body))
+      case _Tm(_Lam(_Abs(name, body))) => Some((name, body))
       case _ => None
     }
   }
 
   object App {
     def apply(f: Term, arg: Term): Term =
-      _TermSig(_App(f, arg))
+      _Tm(_App(f, arg))
     def unapply(t: Term): Option[(Term, Term)] = t match {
-      case _TermSig(_App(f, arg)) => Some((f, arg))
+      case _Tm(_App(f, arg)) => Some((f, arg))
       case _ => None
     }
   }
 
   object Annot {
     def apply(t: Term, tp: SimpleType): Term =
-      _TermSig(_Annot(t, tp))
+      _Tm(_Annot(t, tp))
     def unapply(t: Term): Option[(Term, SimpleType)] = t match {
-      case _TermSig(_Annot(t, tp)) => Some((t, tp))
+      case _Tm(_Annot(t, tp)) => Some((t, tp))
       case _ => None
     }
   }
 
   object Let {
     def apply(name: Name, t1: Term, t2: Term): Term =
-      _TermSig(_Let(t1, _Abs(name, t2)))
+      _Tm(_Let(t1, _Abs(name, t2)))
     def unapply(t: Term): Option[(Name, Term, Term)] = t match {
-      case _TermSig(_Let(t1, _Abs(name, t2))) => Some((name, t1, t2))
+      case _Tm(_Let(t1, _Abs(name, t2))) => Some((name, t1, t2))
       case _ => None
     }
   }
