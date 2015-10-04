@@ -122,7 +122,7 @@ trait IAbt[Signature[_]] {
   protected def _subst(outer: Term, v: Name, inner: Term): Term
   protected def _alphaEquiv(t1: Term, t2: Term): Boolean
 
-  //Methods for internal usage, outside of the interface interface
+  //Methods for internal usage, outside of the interface.
   //Concrete type used to build terms.
   protected sealed trait __Term[T]
   //This is used by smart constructors of all binders.
