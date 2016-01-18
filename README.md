@@ -15,9 +15,9 @@ Scala-specific goodies:
 There are many possible TODOs:
 
 1. Use better algorithms -- the blog post declares it's using simple ones
-   - For instance, use parallel substitution to avoid quadratic complexity.
-   - Avoid concatenating string to build names, that's slow.
-   - Replace the freshness generator with something faster.
+   - [x] For instance, use parallel substitution to avoid quadratic complexity (done in 1db5ee73a1cec39c6674a04b417b30bd212a0626).
+   - [ ] Avoid concatenating string to build names, that's slow (see https://github.com/Blaisorblade/abt/compare/topic/faster-names).
+   - [ ] Replace the freshness generator with something faster.
 2. Review those fancier algorithms to ensure they're correct --- ABT
    mean you need to get binding right only once, but you still have to.
 3. Try out whether the implementation can use other techniques: Must one use
