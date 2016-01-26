@@ -95,7 +95,8 @@ trait IAbt[Signature[_]] {
 
   implicit class TermOps(t: Term) {
     @inline def freeVars: Names = _freeVars(t)
-    @inline def subst(v: Name, inner: Term): Term = _subst(t, v, inner)
+    @inline def subst(v: Name, inner: Term): Term = subst(Map(v -> inner))
+    @inline def subst(map: Map[Name, Term]): Term = _subst(t, map)
     @inline def alphaEquiv(other: Term): Boolean = _alphaEquiv(t, other)
   }
 
@@ -128,7 +129,7 @@ trait IAbt[Signature[_]] {
   }
 
   protected def _freeVars(t: Term): Names
-  protected def _subst(outer: Term, v: Name, inner: Term): Term
+  protected def _subst(t: Term, map: Map[Name, Term]): Term
   protected def _alphaEquiv(t1: Term, t2: Term): Boolean
 
   //Methods for internal usage, outside of the interface.
@@ -226,8 +227,8 @@ class Abt[Signature[_]: Functor: Foldable] extends IAbt[Signature] {
         outer
     }
 
-  def _subst(outer: Term, v: Name, inner: Term): Term =
-    subst(outer, _freeVars(inner), Map(v -> inner))
+  def _subst(outer: Term, map: Map[Name, Term]): Term =
+    subst(outer, map.values.flatMap(_freeVars).toSet, map)
 
   /**
    * Parallel substitution.
