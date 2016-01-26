@@ -73,25 +73,20 @@ object MiniMLTypes {
 
   //Following MiniML, we don't bind type variables in the context, we just use
   //them free.
-  case class Context(asList: List[(Name, Type)]) {
-    require(asList forall {
+  case class Context(asMap: Map[Name, Type]) {
+    require(asMap forall {
       case (_, typ) => isMono(typ)
     })
   }
 
   def generalize(ctx: Context, t: Type): Type = {
     assert(isMono(t))
-    val freeVars = (t.freeVars -- ctx.asList.map(_._2).flatMap(_.freeVars)).toList.sorted
+    val freeVars = (t.freeVars -- ctx.asMap.values.flatMap(_.freeVars)).toList.sorted
     freeVars.foldRight(t)(Poly(_, _))
   }
 
   def instantiate(t: Type, ctx: Context): Type = {
-    //we'd like to bring here parallel substitution.
-    //t.subst(v, inner)
-    ctx.asList.foldLeft(t) {
-      case (t, (n, t2)) =>
-        t.subst(n, t2)
-    }
+    t.subst(ctx.asMap)
   }
 
 }
