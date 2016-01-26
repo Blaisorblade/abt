@@ -81,7 +81,7 @@ object MiniMLTypes {
 
   def generalize(ctx: Context, t: Type): Type = {
     assert(isMono(t))
-    val freeVars = (t.freeVars -- ctx.asList.map(_._2).flatMap(_.freeVars)).toList
+    val freeVars = (t.freeVars -- ctx.asList.map(_._2).flatMap(_.freeVars)).toList.sorted
     freeVars.foldRight(t)(Poly(_, _))
   }
 

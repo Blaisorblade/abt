@@ -43,6 +43,11 @@ object ABTs {
   case class Name(s: String, n: Int = 0) {
     override def toString = s"${s}_${n}"
   }
+
+  object Name {
+    implicit val nOrdering: Ordering[Name] = Ordering.by { name => (name.s, name.n) }
+  }
+
   implicit def toName(s: String) = Name(s)
   type Names = Set[Name]
 }
